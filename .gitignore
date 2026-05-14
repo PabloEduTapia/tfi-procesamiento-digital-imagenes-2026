@@ -1,0 +1,13 @@
+# Entorno virtual local
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Resultados generados
+output/*
+!output/.gitkeep
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
