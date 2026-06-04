@@ -8,9 +8,9 @@ class Protanopia(Daltonismo):
     def __init__(self):
 
         matriz = np.array([
-            [0.567, 0.433, 0.000],
-            [0.558, 0.442, 0.000],
-            [0.000, 0.242, 0.758]
+            [0.152286, 1.052583, -0.204868],
+            [0.114503, 0.786281,  0.099216],
+            [0.000000, 0.000000,  1.000000]
         ])
 
-        super().__init__(matriz)
+        super().__init__(matriz, "protanopia")

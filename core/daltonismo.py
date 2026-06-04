@@ -4,8 +4,9 @@ import numpy as np
 
 class Daltonismo:
 
-    def __init__(self, matriz):
+    def __init__(self, matriz, tipo):
         self.matriz = matriz
+        self.tipo = tipo
 
     # =========================================
     # SIMULAR DALTONISMO
@@ -13,41 +14,22 @@ class Daltonismo:
 
     def simular(self, imagen):
 
-        imagen_float = imagen.astype(np.float32)
+        # Convertir BGR a RGB
+        imagen_rgb = cv2.cvtColor(imagen, cv2.COLOR_BGR2RGB)
 
-        b, g, r = cv2.split(imagen_float)
+        imagen_float = imagen_rgb.astype(np.float32) / 255.0
 
-        r_nuevo = (
-            self.matriz[0, 0] * r +
-            self.matriz[0, 1] * g +
-            self.matriz[0, 2] * b
-        )
+        h, w, _ = imagen_float.shape
+        pixeles = imagen_float.reshape(-1, 3)
 
-        g_nuevo = (
-            self.matriz[1, 0] * r +
-            self.matriz[1, 1] * g +
-            self.matriz[1, 2] * b
-        )
+        pixeles_sim = (self.matriz @ pixeles.T).T
 
-        b_nuevo = (
-            self.matriz[2, 0] * r +
-            self.matriz[2, 1] * g +
-            self.matriz[2, 2] * b
-        )
+        salida = pixeles_sim.reshape(h, w, 3)
+        salida = np.clip(salida, 0, 1)
+        salida = (salida * 255).astype(np.uint8)
 
-        imagen_simulada = cv2.merge((
-            b_nuevo,
-            g_nuevo,
-            r_nuevo
-        ))
-
-        imagen_simulada = np.clip(
-            imagen_simulada,
-            0,
-            255
-        )
-
-        return imagen_simulada.astype(np.uint8)
+        # Convertir RGB de vuelta a BGR
+        return cv2.cvtColor(salida, cv2.COLOR_RGB2BGR)
 
     # =========================================
     # CORREGIR DALTONISMO
@@ -68,16 +50,23 @@ class Daltonismo:
 
         error_b, error_g, error_r = cv2.split(error)
 
-        # Reforzar azul y verde
-        g = g + (error_r * intensidad)
-        b = b + (error_r * intensidad)
+        if self.tipo == "protanopia":
+            # Cono L afectado → redistribuir error del rojo
+            g = g + (error_r * intensidad)
+            b = b + (error_r * intensidad)
+
+        elif self.tipo == "deuteranopia":
+            # Cono M afectado → redistribuir error del verde
+            r = r + (error_g * intensidad)
+            b = b + (error_g * intensidad)
+
+        elif self.tipo == "tritanopia":
+            # Cono S afectado → redistribuir error del azul
+            r = r + (error_b * intensidad)
+            g = g + (error_b * intensidad)
 
         corregida = cv2.merge((b, g, r))
 
-        corregida = np.clip(
-            corregida,
-            0,
-            255
-        )
+        corregida = np.clip(corregida, 0, 255)
 
         return corregida.astype(np.uint8)
