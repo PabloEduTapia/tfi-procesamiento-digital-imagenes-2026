@@ -19,7 +19,7 @@ if imagen is None:
 # REDIMENSIONAR
 # =========================================
 
-#imagen = cv2.resize(imagen, (800, 600)) 
+imagen = cv2.resize(imagen, (800, 600)) 
 
 # =========================================
 # ELEGIR TIPO DE DALTONISMO
@@ -27,17 +27,48 @@ if imagen is None:
 
 print("\nSeleccione una opción:")
 
-print("1 - Protanopia total")
-print("2 - Deuteranopia total")
-print("3 - Tritanopia total")
-print("4 - Combinado o severidad")
+print("1 - Protanopia")
+print("2 - Deuteranopia")
+print("3 - Tritanopia")
+print("4 - Deficiencia cromática combinada (experimental)")
 
 opcion = input("Opción: ")
 
 
 if opcion == "1":
 
-    daltonismo = Protanopia()
+    # =====================================
+    # SEVERIDAD
+    # =====================================
+
+    print("\n¿Qué tan severa es la protanopia?")
+
+    print("1  - Muy leve   (0.1)")
+    print("2  - Leve       (0.2)")
+    print("3  - Moderada   (0.3)")
+    print("4  - Media      (0.4)")
+    print("5  - Notable    (0.5)")
+    print("6  - Marcada    (0.6)")
+    print("7  - Severa     (0.7)")
+    print("8  - Muy severa (0.8)")
+    print("9  - Casi total (0.9)")
+    print("10 - Total      (1.0)")
+
+    sev = input("Opción: ")
+
+    opciones_severidad = {
+        "1": 0.1, "2": 0.2, "3": 0.3,  "4": 0.4,
+        "5": 0.5, "6": 0.6, "7": 0.7,  "8": 0.8,
+        "9": 0.9, "10": 1.0
+    }
+
+    if sev not in opciones_severidad:
+        print("Severidad inválida")
+        exit()
+
+    severidad = opciones_severidad[sev]
+
+    daltonismo = Protanopia(severidad)
 
 
 elif opcion == "2":
