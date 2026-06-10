@@ -1,9 +1,12 @@
+import os
 import cv2
 
 from core.protanopia import Protanopia
-#from core.deuteranopia import Deuteranopia # Lo agrega despues D'annunzio
-#from core.tritanopia import Tritanopia # Lo agrega despues Tapia
+from core.deuteranopia import Deuteranopia
+from core.tritanopia import Tritanopia
 from core.combinado import Combinado
+from core.matrices_machado import normalizar_severidad
+
 
 # =========================================
 # CARGAR IMAGEN
@@ -19,131 +22,115 @@ if imagen is None:
 # REDIMENSIONAR
 # =========================================
 
-#imagen = cv2.resize(imagen, (800, 600)) 
+# imagen = cv2.resize(imagen, (800, 600))
+
+# =========================================
+# FUNCIONES AUXILIARES
+# =========================================
+
+
+def pedir_tipos():
+    print("\n¿Qué tipo de deficiencia tiene?")
+    print("Puede elegir varias separadas por coma.\n")
+    print("1 - Protanomalía / Protanopia")
+    print("2 - Deuteranomalía / Deuteranopia")
+    print("3 - Tritanomalía / Tritanopia")
+
+    seleccion = input("\nEjemplo: 1,2\nOpción: ")
+    tipos = []
+
+    for t in seleccion.split(","):
+        t = t.strip()
+
+        if t == "1":
+            tipos.append("protan")
+        elif t == "2":
+            tipos.append("deutan")
+        elif t == "3":
+            tipos.append("tritan")
+
+    if len(tipos) == 0:
+        print("Selección inválida")
+        exit()
+
+    return tipos
+
+
+def pedir_severidad():
+    print("\n¿Qué tan severo?")
+    print("Ingrese un valor de 0 a 10:")
+    print("0 = sin deficiencia")
+    print("10 = máxima severidad / dicromacia")
+    print("También puede ingresar 0.0, 0.1, 0.2 ... 1.0")
+
+    valor = input("Severidad: ")
+
+    try:
+        return normalizar_severidad(valor)
+    except ValueError as ex:
+        print(f"Severidad inválida: {ex}")
+        exit()
+
 
 # =========================================
 # ELEGIR TIPO DE DALTONISMO
 # =========================================
 
 print("\nSeleccione una opción:")
-
 print("1 - Protanopia total")
 print("2 - Deuteranopia total")
 print("3 - Tritanopia total")
-print("4 - Combinado o severidad")
+print("4 - Elegir tipo y severidad")
+print("5 - Combinado")
 
 opcion = input("Opción: ")
 
+try:
+    if opcion == "1":
+        daltonismo = Protanopia(severidad=1.0)
 
-if opcion == "1":
+    elif opcion == "2":
+        daltonismo = Deuteranopia(severidad=1.0)
 
-    daltonismo = Protanopia()
+    elif opcion == "3":
+        daltonismo = Tritanopia(severidad=1.0)
 
+    elif opcion == "4":
+        tipos = pedir_tipos()
 
-elif opcion == "2":
+        if len(tipos) > 1:
+            print("Para elegir varios tipos use la opción 5 - Combinado.")
+            exit()
 
-    daltonismo = Deuteranopia()
+        severidad = pedir_severidad()
+        daltonismo = Combinado(tipos, severidad)
 
-
-elif opcion == "3":
-
-    daltonismo = Tritanopia()
-
-
-elif opcion == "4":
-
-    # =====================================
-    # ELEGIR DEFICIENCIAS
-    # =====================================
-
-    print("\n¿Qué tipo de deficiencia tiene?")
-    print("(Puede elegir varias separadas por coma)\n")
-
-    print("1 - Protanomalía")
-    print("2 - Deuteranomalía")
-    print("3 - Tritanomalía")
-
-    seleccion = input("\nEjemplo: 1,2\nOpción: ")
-
-    tipos = []
-
-    for t in seleccion.split(","):
-
-        t = t.strip()
-
-        if t == "1":
-            tipos.append("protan")
-
-        elif t == "2":
-            tipos.append("deutan")
-
-        elif t == "3":
-            tipos.append("tritan")
-
-
-    if len(tipos) == 0:
-
-        print("Selección inválida")
-        exit()
-
-
-    # =====================================
-    # SEVERIDAD
-    # =====================================
-
-    print("\n¿Qué tan severo?")
-
-    print("1 - Leve")
-    print("2 - Moderado")
-    print("3 - Severo")
-
-    severidad = input("Opción: ")
-
-
-    if severidad == "1":
-
-        delta_nm = 6
-
-    elif severidad == "2":
-
-        delta_nm = 14
-
-    elif severidad == "3":
-
-        delta_nm = 20
+    elif opcion == "5":
+        tipos = pedir_tipos()
+        severidad = pedir_severidad()
+        daltonismo = Combinado(tipos, severidad)
 
     else:
-
-        print("Severidad inválida")
+        print("Opción inválida")
         exit()
 
-
-    daltonismo = Combinado(
-        tipos,
-        delta_nm
-    )
-
-
-else:
-
-    print("Opción inválida")
+except ValueError as ex:
+    print(f"Error de configuración: {ex}")
     exit()
-
 
 # =========================================
 # PROCESAMIENTO
 # =========================================
 
 simulada = daltonismo.simular(imagen)
-
 corregida = daltonismo.corregir(imagen)
 
 # =========================================
 # GUARDAR RESULTADOS
 # =========================================
 
+os.makedirs("output", exist_ok=True)
 cv2.imwrite("output/simulada.jpg", simulada)
-
 cv2.imwrite("output/corregida.jpg", corregida)
 
 # =========================================
@@ -151,13 +138,10 @@ cv2.imwrite("output/corregida.jpg", corregida)
 # =========================================
 
 cv2.imshow("Original", imagen)
-
 cv2.imshow("Simulada", simulada)
-
 cv2.imshow("Corregida", corregida)
 
 cv2.waitKey(0)
-
 cv2.destroyAllWindows()
 
 print("Procesamiento finalizado")
