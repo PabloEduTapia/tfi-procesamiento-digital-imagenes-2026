@@ -74,25 +74,14 @@ def pedir_severidad():
 # =========================================
 
 print("\nSeleccione una opción:")
-print("1 - Protanopia total")
-print("2 - Deuteranopia total")
-print("3 - Tritanopia total")
-print("4 - Elegir tipo y severidad")
-print("5 - Combinado")
+
+print("1 - Elegir tipo y severidad")
+print("2 - Combinado")
 
 opcion = input("Opción: ")
 
 try:
     if opcion == "1":
-        daltonismo = Protanopia(severidad=1.0)
-
-    elif opcion == "2":
-        daltonismo = Deuteranopia(severidad=1.0)
-
-    elif opcion == "3":
-        daltonismo = Tritanopia(severidad=1.0)
-
-    elif opcion == "4":
         tipos = pedir_tipos()
 
         if len(tipos) > 1:
@@ -102,7 +91,7 @@ try:
         severidad = pedir_severidad()
         daltonismo = Combinado(tipos, severidad)
 
-    elif opcion == "5":
+    elif opcion == "2":
         tipos = pedir_tipos()
         severidad = pedir_severidad()
         daltonismo = Combinado(tipos, severidad)
