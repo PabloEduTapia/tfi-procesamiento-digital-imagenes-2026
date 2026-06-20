@@ -1,9 +1,6 @@
 import os
 import cv2
 
-from core.protanopia import Protanopia
-from core.deuteranopia import Deuteranopia
-from core.tritanopia import Tritanopia
 from core.combinado import Combinado
 from core.matrices_machado import normalizar_severidad
 
