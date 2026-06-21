@@ -1,7 +1,11 @@
+import logging
+
 import numpy as np
 
 from core.daltonismo import Daltonismo
 from core.matrices_machado import obtener_matriz, NOMBRES_LEGIBLES
+
+logger = logging.getLogger(__name__)
 
 
 class Combinado(Daltonismo):
@@ -32,10 +36,6 @@ class Combinado(Daltonismo):
             tipos_correccion=tipos_normalizados,
         )
 
-        print("\nTipos seleccionados:")
-        for tipo in tipos_normalizados:
-            print(f"- {NOMBRES_LEGIBLES[tipo]}")
-
-        print(f"\nSeveridad normalizada: {severidad_normalizada:.1f}")
-        print("\nMatriz usada:")
-        print(self.matriz.round(6))
+        logger.info("Tipos seleccionados: %s", [NOMBRES_LEGIBLES[t] for t in tipos_normalizados])
+        logger.info("Severidad normalizada: %.1f", severidad_normalizada)
+        logger.debug("Matriz usada:\n%s", self.matriz.round(6))

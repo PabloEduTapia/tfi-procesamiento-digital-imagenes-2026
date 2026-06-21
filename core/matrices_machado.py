@@ -102,25 +102,37 @@ def normalizar_tipo(tipo: str) -> str:
 
 def normalizar_severidad(valor) -> float:
     """
-    Normaliza la severidad para buscarla en el diccionario.
+    Normaliza la severidad para buscarla en el diccionario de matrices.
 
-    Acepta:
-    - Escala 0 a 10: 0, 1, 2, ..., 10.
-    - Escala 0.0 a 1.0: 0.0, 0.1, 0.2, ..., 1.0.
+    Acepta dos formas de entrada:
+    - Escala entera 0 a 10: 0, 1, 2, ..., 10.
+      En esta escala, 1 significa 0.1 y 10 significa 1.0.
+    - Escala decimal 0.0 a 1.0: 0.0, 0.1, 0.2, ..., 1.0.
+      En esta escala, 1.0 significa máxima severidad.
     """
+
+    texto = str(valor).strip()
+    texto_normalizado = texto.replace(",", ".")
+
     try:
-        numero = float(str(valor).strip().replace(",", "."))
+        numero = float(texto_normalizado)
     except ValueError:
-        raise ValueError("La severidad debe ser un numero entre 0 y 10, o entre 0.0 y 1.0.")
+        raise ValueError(
+            "La severidad debe ser un número entre 0 y 10, o entre 0.0 y 1.0."
+        )
 
-    if 0 <= numero <= 10 and numero > 1:
+    tiene_decimal = "." in texto_normalizado
+
+    if not 0 <= numero <= 10:
+        raise ValueError(
+            "La severidad debe estar entre 0 y 10, o entre 0.0 y 1.0."
+        )
+
+    if numero > 1:
         numero = numero / 10.0
+    elif numero == 1 and not tiene_decimal:
+        numero = 0.1
 
-    if not 0 <= numero <= 1:
-        raise ValueError("La severidad debe estar entre 0 y 10, o entre 0.0 y 1.0.")
-
-    # El diccionario tiene claves cada 0.1. Redondeamos a un decimal para que
-    # entradas como 7, 7.0 o 0.699999 funcionen sin problemas.
     severidad = round(numero, 1)
 
     if severidad not in MATRICES_CVD["protanomaly"]:

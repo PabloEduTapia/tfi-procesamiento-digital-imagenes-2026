@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visión Cromática — Simulador y corrector de daltonismo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+
+  <header class="encabezado">
+    <div class="contenedor encabezado__interior">
+      <div class="marca">
+        <span class="marca__icono" aria-hidden="true">
+          <span class="marca__icono-r"></span>
+          <span class="marca__icono-g"></span>
+          <span class="marca__icono-b"></span>
+        </span>
+        <span class="marca__texto">Visión Cromática</span>
+      </div>
+      <p class="encabezado__subtitulo">Simulación y corrección de daltonismo sobre imágenes reales</p>
+    </div>
+  </header>
+
+  <main class="contenedor principal">
+
+    <section class="panel panel--formulario" aria-label="Configuración del procesamiento">
+      <form id="form-procesar" enctype="multipart/form-data">
+
+        <div class="grupo-campo">
+          <label class="etiqueta-campo" for="input-imagen">Imagen a procesar</label>
+          <div class="zona-carga" id="zona-carga" tabindex="0" role="button"
+               aria-describedby="ayuda-carga">
+            <input type="file" id="input-imagen" name="imagen" accept=".png,.jpg,.jpeg,.bmp,.webp" hidden>
+            <div class="zona-carga__contenido" id="zona-carga__contenido">
+              <svg class="zona-carga__icono" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
+                      fill="none" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p>Arrastrá una imagen o hacé clic para elegirla</p>
+              <p class="zona-carga__detalle" id="ayuda-carga">PNG, JPG, BMP o WEBP — hasta 8&nbsp;MB</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grupo-campo">
+          <span class="etiqueta-campo">Tipo de daltonismo</span>
+          <div class="opciones-tipo" role="radiogroup" aria-label="Tipo de daltonismo">
+            {% for tipo in tipos %}
+            <label class="opcion-tipo">
+              <input type="radio" name="tipo" value="{{ tipo.valor }}" {% if loop.first %}checked{% endif %}>
+              <span class="opcion-tipo__caja">
+                <span class="opcion-tipo__muestra opcion-tipo__muestra--{{ tipo.valor }}" aria-hidden="true"></span>
+                <span class="opcion-tipo__texto">{{ tipo.etiqueta }}</span>
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="grupo-campo">
+          <div class="etiqueta-severidad">
+            <label class="etiqueta-campo" for="input-severidad">Severidad</label>
+            <span class="valor-severidad" id="valor-severidad">7</span>
+          </div>
+          <input type="range" id="input-severidad" name="severidad" min="0" max="10" value="7" step="1">
+          <div class="escala-severidad">
+            <span>0 — visión típica</span>
+            <span>10 — dicromacia total</span>
+          </div>
+        </div>
+
+        <button type="submit" class="boton-procesar" id="boton-procesar">
+          <span class="boton-procesar__texto">Procesar imagen</span>
+          <span class="boton-procesar__spinner" aria-hidden="true"></span>
+        </button>
+
+        <p class="mensaje-error" id="mensaje-error" role="alert" hidden></p>
+      </form>
+
+      <p class="nota-tecnica">
+        El procesamiento aplica matrices de transformación cromática basadas en el modelo
+        fisiológico de Machado, Oliveira y Fernandes (2009). No reemplaza una evaluación
+        médica ni "cura" el daltonismo: muestra cómo se modifica la percepción del color
+        sobre una imagen concreta.
+      </p>
+    </section>
+
+    <section class="panel panel--resultados" aria-label="Resultados" id="panel-resultados" hidden>
+
+      <div class="resultados-header">
+        <h2>Comparación</h2>
+        <div class="selector-vista" role="tablist" aria-label="Modo de visualización">
+          <button type="button" class="activo" id="boton-vista-grilla" role="tab" aria-selected="true">
+            Grilla
+          </button>
+          <button type="button" id="boton-vista-comparar" role="tab" aria-selected="false">
+            Comparar con slider
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista 1: las tres imágenes en grande, una junto a otra -->
+      <div class="resultados-grid vista-grilla" id="vista-grilla">
+        <figure class="resultado">
+          <div class="resultado__marco" data-imagen="original">
+            <img id="img-original" alt="Imagen original">
+            <span class="resultado__ampliar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/>
+              </svg>
+            </span>
+          </div>
+          <figcaption>Original</figcaption>
+        </figure>
+        <figure class="resultado">
+          <div class="resultado__marco" data-imagen="simulada">
+            <img id="img-simulada" alt="Simulación de la percepción con daltonismo">
+            <span class="resultado__ampliar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/>
+              </svg>
+            </span>
+          </div>
+          <figcaption>Simulada</figcaption>
+        </figure>
+        <figure class="resultado">
+          <div class="resultado__marco" data-imagen="corregida">
+            <img id="img-corregida" alt="Imagen con corrección cromática aplicada">
+            <span class="resultado__ampliar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/>
+              </svg>
+            </span>
+          </div>
+          <figcaption>Corregida</figcaption>
+        </figure>
+      </div>
+
+      <!-- Vista 2: comparación deslizable entre dos imágenes a elección -->
+      <div class="vista-comparar" id="vista-comparar">
+        <div class="comparar-selector">
+          <label for="select-comparar-izq">Izquierda</label>
+          <select id="select-comparar-izq">
+            <option value="original" selected>Original</option>
+            <option value="simulada">Simulada</option>
+            <option value="corregida">Corregida</option>
+          </select>
+          <span aria-hidden="true">→</span>
+          <label for="select-comparar-der">Derecha</label>
+          <select id="select-comparar-der">
+            <option value="original">Original</option>
+            <option value="simulada" selected>Simulada</option>
+            <option value="corregida">Corregida</option>
+          </select>
+        </div>
+
+        <div class="comparador" id="comparador">
+          <div class="comparador__capa comparador__capa--fondo">
+            <img id="comparador-img-der" alt="Imagen de la derecha">
+          </div>
+          <div class="comparador__capa comparador__capa--frente" id="comparador-frente">
+            <img id="comparador-img-izq" alt="Imagen de la izquierda">
+          </div>
+          <div class="comparador__linea" id="comparador-linea">
+            <div class="comparador__agarre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 8l-4 4 4 4M16 8l4 4-4 4"/>
+              </svg>
+            </div>
+          </div>
+          <span class="comparador__etiqueta comparador__etiqueta--izq" id="etiqueta-izq">Original</span>
+          <span class="comparador__etiqueta comparador__etiqueta--der" id="etiqueta-der">Simulada</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Lightbox: imagen ampliada a pantalla completa -->
+    <div class="lightbox" id="lightbox" hidden>
+      <button type="button" class="lightbox__cerrar" id="lightbox-cerrar" aria-label="Cerrar imagen ampliada">×</button>
+      <img id="lightbox-img" src="" alt="Imagen ampliada">
+    </div>
+
+    <section class="panel panel--vacio" id="panel-vacio" aria-hidden="true">
+      <svg class="panel-vacio__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M8 13c1.2 1.4 2.6 2 4 2s2.8-.6 4-2" fill="none" stroke="currentColor"
+              stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="9" cy="9.5" r=".9" fill="currentColor"/>
+        <circle cx="15" cy="9.5" r=".9" fill="currentColor"/>
+      </svg>
+      <p>Subí una imagen y elegí el tipo de daltonismo para ver la comparación acá.</p>
+    </section>
+
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>Proyecto académico — Técnicas de Procesamiento Digital de Imágenes · IFTS N.º 18</p>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
