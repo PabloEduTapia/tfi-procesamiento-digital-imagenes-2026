@@ -58,6 +58,11 @@ tfi-procesamiento-digital-imagenes-2026/
 │       └── app.js
 │
 ├── docs/
+│   ├── informe_tecnico.md
+│   ├── imagenes/
+│   │   ├── original.jpg
+│   │   ├── simulada.jpg
+│   │   └── corregida.jpg
 │   ├── Paper_Daltonismo.docx
 │   └── A Physiologically-based Model...
 │
@@ -131,6 +136,10 @@ El proyecto utiliza Python 3 y las siguientes bibliotecas:
 * NumPy
 * OpenCV
 * Pillow
+* Flask
+* pytest
+
+NumPy se utiliza para operar sobre arrays de imagen. OpenCV se utiliza para procesamiento, guardado y visualización de imágenes. Pillow se utiliza para carga y validación inicial. Flask se utiliza para la interfaz web. pytest se utiliza para ejecutar la prueba automatizada del Core.
 
 Estas dependencias están indicadas en el archivo `requirements.txt`.
 
