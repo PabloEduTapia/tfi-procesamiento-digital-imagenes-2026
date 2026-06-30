@@ -1,54 +1,157 @@
-# Trabajo Final Integrador 2026 - Procesamiento Digital de Imágenes
+# TFI 2026 - Procesamiento de imágenes para daltonismo
 
-## Descripción del proyecto
+El proyecto expone un Core reutilizable para simular deficiencias de visión del color, aplicar una corrección y agregar símbolos sobre zonas de color para facilitar su identificación.
 
-Este repositorio contiene el desarrollo del Trabajo Final Integrador de la materia **Técnicas de Procesamiento Digital de Imágenes**, correspondiente al **IFTS N.º 18**.
+## Alcance de esta versión
 
-El objetivo del proyecto es diseñar, desarrollar y documentar una aplicación capaz de recibir una imagen real como entrada, aplicar técnicas de procesamiento digital de imágenes y generar como salida una nueva imagen transformada. El trabajo busca demostrar el funcionamiento técnico de la solución, la correcta elección de técnicas, la implementación del procesamiento, las pruebas realizadas y la documentación del proceso.
+- API HTTP que recibe imágenes como `multipart/form-data`.
+- Procesamiento en memoria, sin depender de rutas locales.
+- Simulación de protanomalía, deuteranomalía y tritanomalía.
+- Corrección por redistribución del error de color.
+- Marcado de colores mediante figuras repetidas y una leyenda.
+- Matrices Machado externas al código.
+- Soporte para CSV y XLSX.
+- Pipeline de pasos y orquestador para armar cada procesamiento.
+- CLI separado de la API.
 
-La solución se implementa utilizando **Python 3**, aplicando **programación orientada a objetos** y separando la lógica principal en un **Core reutilizable**, independiente de la capa de entrada, salida o visualización, tal como solicita la consigna del Trabajo Final Integrador. La consigna indica como materia **Técnicas de Procesamiento Digital de Imágenes**, año **2026**, profesor **Juan Ignacio Bonini** y modalidad en grupos de hasta 4 integrantes. :contentReference[oaicite:0]{index=0}
+## Compatibilidad
 
-## Integrantes
+El servidor Python puede ejecutarse en Windows, Linux y macOS. Una aplicación iOS puede enviar la imagen a la API y recibir el archivo procesado.
 
-- Gabriel Dannunzio
-- Pablo Nuñez
-- Pablo Tapia
+Si se necesitara ejecutar el procesamiento completamente dentro del iPhone, sin servidor, sería otra variante del proyecto y habría que portar el Core o empaquetarlo para iOS.
 
-## Institución
+## Estructura
 
-**IFTS N.º 18**
+```text
+api/
+  main.py                 API FastAPI
+cli/
+  main.py                 Entrada por consola
+core/
+  color_marker.py         Figuras y leyenda por color
+  daltonism_engine.py     Simulación y corrección
+  image_codec.py          Decodificación y codificación en memoria
+  matrix_repository.py    Lectura de matrices CSV/XLSX
+  models.py               Opciones y contexto
+  orchestrator.py         Decide qué pipeline ejecutar
+  pipeline.py             Pasos de procesamiento
+data/matrices/
+  machado.csv             Todas las matrices en formato tabular
+  machado.xlsx            Una hoja por tipo de daltonismo
+tests/
+```
 
-## Materia
+## Matrices
 
-**Técnicas de Procesamiento Digital de Imágenes**
+El archivo CSV utiliza estas columnas:
 
-## Año
+```text
+type,severity,m00,m01,m02,m10,m11,m12,m20,m21,m22
+```
 
-**2026**
+El XLSX contiene las hojas:
 
-## Profesor
+- `protanomaly`
+- `deuteranomaly`
+- `tritanomaly`
 
-**Juan Ignacio Bonini**
+Cada hoja tiene una fila por severidad. Para usar otro archivo se puede definir la variable de entorno `MATRIX_FILE`.
 
-## Objetivo general
+## Instalación
 
-Desarrollar una aplicación que permita procesar una imagen real mediante una o más técnicas de procesamiento digital de imágenes, obteniendo como resultado una imagen nueva, verificable y distinta de la original.
+```bash
+python -m venv .venv
+```
 
-## Alcance del proyecto
+Windows:
 
-La aplicación debe cumplir con los siguientes puntos principales:
+```bash
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-- Recibir una imagen provista por el usuario o por una fuente controlada.
-- Aplicar una o más técnicas de procesamiento digital de imágenes.
-- Generar una nueva imagen procesada como resultado.
-- Permitir ejecutar el procesamiento de forma clara, verificable y documentada.
-- Documentar el problema, el enfoque, las técnicas utilizadas, la implementación, las pruebas y las mejoras futuras.
-- Permitir que cada integrante pueda explicar su participación, las decisiones técnicas tomadas y el funcionamiento general del proyecto.
+Linux/macOS:
 
-## Tecnologías principales
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-- Python 3
-- Programación orientada a objetos
-- Procesamiento digital de imágenes
-- Git / GitHub
-- Core de procesamiento reutilizable
+## Ejecutar la API
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Documentación local:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Endpoint principal
+
+```text
+POST /v1/images/process
+```
+
+Campos:
+
+- `file`: imagen de entrada.
+- `result`: `simulated`, `corrected`, `marked`, `simulated_marked` o `corrected_marked`.
+- `types`: uno o más tipos separados por coma, por ejemplo `protan,deutan`.
+- `severity`: escala de `0` a `10`. También admite un valor normalizado escrito como `0.7`.
+- `correction_intensity`: intensidad de corrección.
+- `marker_spacing`: distancia entre figuras.
+- `marker_size`: tamaño de cada figura.
+- `include_legend`: agrega la referencia entre figura y color.
+- `output_format`: `png`, `jpg` o `webp`.
+
+Ejemplo:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/v1/images/process" \
+  -F "file=@input/imagen.jpg" \
+  -F "result=corrected_marked" \
+  -F "types=deutan" \
+  -F "severity=8" \
+  -F "output_format=png" \
+  --output output/resultado.png
+```
+
+## Ejecutar por CLI
+
+```bash
+python -m cli.main input/imagen.jpg output/resultado.png \
+  --result corrected_marked \
+  --types deutan \
+  --severity 8
+```
+
+## Marcadores de color
+
+La imagen se convierte a HSV y se agrupan zonas de colores saturados. Sobre cada zona se repite una figura distinta, por ejemplo:
+
+- rojo: triángulo;
+- amarillo: rombo;
+- verde: círculo;
+- azul: cuadrado.
+
+No se dibuja una figura literalmente en cada píxel porque volvería ilegible la imagen. Los símbolos se distribuyen en una cuadrícula y solo se agregan cuando una parte suficiente del área pertenece al mismo grupo de color.
+
+## Pruebas
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+### CLI con menú interactivo
+
+Para usar el proyecto con un menú simple por consola:
+
+```bash
+python -m cli.menu
+```
+
+El menú permite elegir la imagen, el tipo de daltonismo, el resultado, la severidad y la ruta de salida. Si se presiona Enter en la ruta de entrada, usa `input/imagen.jpg`.
